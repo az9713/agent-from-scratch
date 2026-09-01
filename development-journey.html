@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A warts-and-all account of extracting, reconstructing, teaching, and testing a coding agent from Tim&#x27;s video.">
+  <meta name="theme-color" content="#151b26">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='8'%20fill='%23151b26'/%3E%3Ctext%20x='8'%20y='43'%20font-size='32'%20fill='%2375e3e1'%3E%3E_%3C/text%3E%3C/svg%3E">
+  <title>Development journey · Agent from scratch</title>
+  <style>
+:root {
+  --paper: #f5f7fa;
+  --surface: #ffffff;
+  --ink: #151b26;
+  --muted: #5c6678;
+  --rule: #d8dee9;
+  --blue: #2857d9;
+  --cyan: #008f95;
+  --amber: #d88a00;
+  --code: #111827;
+  --code-ink: #dbeafe;
+  --shadow: 0 24px 70px rgba(24, 39, 75, 0.10);
+  --display: "Aptos Display", "Segoe UI Variable Display", "Trebuchet MS", sans-serif;
+  --body: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+  --utility: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  overflow-x: hidden;
+  color: var(--ink);
+  background:
+    linear-gradient(rgba(40, 87, 217, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(40, 87, 217, 0.035) 1px, transparent 1px),
+    var(--paper);
+  background-size: 28px 28px;
+  font-family: var(--body);
+  font-size: 18px;
+  line-height: 1.72;
+}
+a { color: var(--blue); text-underline-offset: 0.18em; }
+a:hover { color: var(--cyan); }
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--amber);
+  outline-offset: 4px;
+}
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 10px;
+  left: 10px;
+  padding: 8px 12px;
+  color: white;
+  background: var(--ink);
+  transform: translateY(-160%);
+}
+.skip-link:focus { transform: translateY(0); }
+.progress {
+  position: fixed;
+  z-index: 50;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.site-bar {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 4vw;
+  border-bottom: 1px solid rgba(216, 222, 233, 0.9);
+  background: rgba(245, 247, 250, 0.90);
+  backdrop-filter: blur(14px);
+  font-family: var(--utility);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+.brand { color: var(--ink); text-decoration: none; font-weight: 700; }
+.brand-mark { color: var(--cyan); }
+.site-links { display: flex; gap: 18px; align-items: center; }
+.site-links a { color: var(--muted); text-decoration: none; }
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(70px, 10vw, 132px) 5vw clamp(60px, 8vw, 110px);
+  color: white;
+  background: var(--ink);
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  width: min(52vw, 720px);
+  aspect-ratio: 1;
+  right: -17vw;
+  top: -33%;
+  border: 1px solid rgba(0, 184, 193, 0.32);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 52px rgba(40, 87, 217, 0.08),
+    0 0 0 104px rgba(0, 143, 149, 0.06);
+}
+.hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: auto; }
+.eyebrow {
+  margin: 0 0 20px;
+  color: #75e3e1;
+  font: 700 12px/1.3 var(--utility);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.hero h1 {
+  max-width: 880px;
+  margin: 0;
+  font: 760 clamp(48px, 8vw, 104px)/0.94 var(--display);
+  letter-spacing: -0.055em;
+}
+.hero-copy {
+  max-width: 700px;
+  margin: 28px 0 0;
+  color: #bfc9d9;
+  font: 400 clamp(18px, 2vw, 23px)/1.5 var(--body);
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  width: min(100%, 690px);
+  max-width: 690px;
+  margin-top: 44px;
+  background: #354053;
+  border: 1px solid #354053;
+}
+.metric { padding: 18px 20px; background: #1c2432; }
+.metric strong {
+  display: block;
+  color: white;
+  font: 720 25px/1 var(--display);
+  letter-spacing: -0.03em;
+}
+.metric span {
+  display: block;
+  margin-top: 7px;
+  color: #9faabc;
+  font: 500 10px/1.3 var(--utility);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.mobile-index { display: none; }
+.shell {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 820px);
+  gap: clamp(40px, 7vw, 100px);
+  max-width: 1240px;
+  margin: auto;
+  padding: 72px 5vw 120px;
+  align-items: start;
+}
+.rail {
+  position: sticky;
+  top: 32px;
+  font-family: var(--utility);
+}
+.rail-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.rail-label::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--cyan);
+  box-shadow: 0 0 0 5px rgba(0, 143, 149, 0.12);
+  border-radius: 50%;
+}
+.toc { position: relative; margin: 0; padding: 0 0 0 18px; }
+.toc > ul { margin: 0; padding: 0; list-style: none; }
+.toc::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 6px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--rule);
+}
+.toc ul ul { display: none; }
+.toc li { margin: 0; }
+.toc a {
+  position: relative;
+  display: block;
+  padding: 7px 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  text-decoration: none;
+}
+.toc a::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 13px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid #9aa6b8;
+  border-radius: 50%;
+  background: var(--paper);
+}
+.toc a.active { color: var(--blue); font-weight: 700; }
+.toc a.active::before { background: var(--blue); border-color: var(--blue); }
+.article {
+  min-width: 0;
+  padding: clamp(28px, 5vw, 72px);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow);
+}
+.article > h1 { display: none; }
+.article h2 {
+  margin: 3.4em 0 0.9em;
+  padding-top: 0.35em;
+  color: var(--ink);
+  font: 720 clamp(30px, 4vw, 45px)/1.08 var(--display);
+  letter-spacing: -0.035em;
+  scroll-margin-top: 28px;
+}
+.article h2:first-of-type { margin-top: 0; }
+.article h2::after {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 4px;
+  margin-top: 18px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+}
+.article h3 {
+  margin: 2.5em 0 0.65em;
+  color: #24304a;
+  font: 700 clamp(22px, 2.4vw, 28px)/1.2 var(--display);
+  letter-spacing: -0.02em;
+  scroll-margin-top: 28px;
+}
+.article p { margin: 0.9em 0; }
+.article strong { color: #172c66; }
+.article blockquote {
+  margin: 1.8em 0;
+  padding: 1px 0 1px 24px;
+  color: #3e495b;
+  border-left: 4px solid var(--cyan);
+}
+.article ul, .article ol { padding-left: 1.4em; }
+.article li { margin: 0.38em 0; padding-left: 0.2em; }
+.article li::marker { color: var(--blue); font-family: var(--utility); }
+.article hr { border: 0; border-top: 1px solid var(--rule); margin: 3em 0; }
+.article code {
+  padding: 0.1em 0.35em;
+  border: 1px solid #dbe2ef;
+  border-radius: 3px;
+  color: #113d91;
+  background: #edf3ff;
+  font: 0.82em/1.5 var(--utility);
+  overflow-wrap: anywhere;
+}
+.article pre {
+  position: relative;
+  overflow-x: auto;
+  margin: 1.6em 0;
+  padding: 24px;
+  color: var(--code-ink);
+  background: var(--code);
+  border-left: 4px solid var(--cyan);
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.16);
+}
+.article pre code { padding: 0; border: 0; color: inherit; background: transparent; }
+.copy-code {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px 8px;
+  color: #a8b4c8;
+  background: #202b3c;
+  border: 1px solid #3a4659;
+  font: 600 10px/1 var(--utility);
+  cursor: pointer;
+}
+.article table {
+  width: 100%;
+  margin: 1.8em 0;
+  border-collapse: collapse;
+  font-size: 0.91em;
+}
+.article th, .article td { padding: 12px 14px; border: 1px solid var(--rule); text-align: left; vertical-align: top; }
+.article th { color: white; background: #263147; font-family: var(--utility); font-size: 0.78em; }
+.page-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 36px 5vw;
+  color: #aeb8c8;
+  background: var(--ink);
+  font: 11px/1.5 var(--utility);
+}
+.page-footer a { color: #75e3e1; }
+
+/* Landing page */
+.landing { max-width: 1180px; margin: auto; padding: 72px 5vw 120px; }
+.landing-intro { max-width: 760px; font-size: 22px; }
+.doc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 52px; }
+.doc-card {
+  position: relative;
+  min-height: 340px;
+  padding: clamp(28px, 5vw, 54px);
+  color: inherit;
+  background: white;
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+.doc-card:hover { color: inherit; transform: translateY(-5px); border-color: var(--blue); }
+.card-tag { color: var(--cyan); font: 700 11px/1 var(--utility); letter-spacing: 0.12em; text-transform: uppercase; }
+.doc-card h2 { margin: 70px 0 18px; font: 740 clamp(30px, 4vw, 48px)/1 var(--display); letter-spacing: -0.04em; }
+.doc-card p { color: var(--muted); }
+.card-arrow { position: absolute; right: 32px; bottom: 28px; color: var(--blue); font: 700 24px/1 var(--utility); }
+.loop-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  margin: 68px 0 0;
+  border: 1px solid var(--rule);
+  background: white;
+}
+.loop-step { position: relative; padding: 24px 16px; font: 600 11px/1.4 var(--utility); text-align: center; }
+.loop-step + .loop-step { border-left: 1px solid var(--rule); }
+.loop-step + .loop-step::before { content: "→"; position: absolute; left: -8px; color: var(--cyan); background: white; }
+
+@media (max-width: 860px) {
+  body { font-size: 17px; }
+  .site-links { display: none; }
+  .hero { padding-inline: 7vw; }
+  .hero h1 { font-size: clamp(46px, 15vw, 72px); }
+  .metrics { grid-template-columns: 1fr; max-width: 340px; }
+  .shell { display: block; padding: 34px 4vw 70px; }
+  .rail { display: none; }
+  .mobile-index { display: block; margin: 0 0 20px; padding: 12px 16px; background: white; border: 1px solid var(--rule); font-family: var(--utility); font-size: 12px; }
+  .mobile-index .toc { margin-top: 12px; }
+  .article { padding: 32px 6vw 64px; box-shadow: none; }
+  .doc-grid { grid-template-columns: 1fr; }
+  .loop-strip { grid-template-columns: 1fr; }
+  .loop-step + .loop-step { border-left: 0; border-top: 1px solid var(--rule); }
+  .loop-step + .loop-step::before { content: "↓"; top: -8px; left: 50%; }
+  .page-footer { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; }
+}
+
+@media print {
+  body { background: white; font-size: 11pt; }
+  .progress, .site-bar, .rail, .mobile-index, .copy-code { display: none !important; }
+  .hero { padding: 30px; color: black; background: white; border-bottom: 2px solid black; }
+  .hero h1 { font-size: 34pt; }
+  .hero-copy, .eyebrow { color: #333; }
+  .metrics { background: white; border-color: #aaa; }
+  .metric { color: black; background: white; }
+  .metric strong, .metric span { color: black; }
+  .shell { display: block; max-width: none; padding: 24px 0; }
+  .article { max-width: none; padding: 0; border: 0; box-shadow: none; }
+  .article h2, .article h3 { break-after: avoid; }
+  .article pre, .article blockquote { break-inside: avoid; }
+  .page-footer { color: black; background: white; border-top: 1px solid #aaa; }
+}
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <div class="progress" aria-hidden="true"></div>
+  <nav class="site-bar" aria-label="Site navigation">
+    <a class="brand" href="index.html"><span class="brand-mark">&gt;_</span> agent/from-scratch</a>
+    <div class="site-links">
+      <a href="tests-explained.html">Tests, explained</a>
+      <a class="optional" href="https://github.com/az9713/agent-from-scratch">Source on GitHub</a>
+    </div>
+  </nav>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Build trace / reconstructed session</p>
+      <h1>Development journey</h1>
+      <p class="hero-copy">A warts-and-all account of extracting, reconstructing, teaching, and testing a coding agent from Tim&#x27;s video.</p>
+      <div class="metrics" aria-label="Document summary"><div class="metric"><strong>37:24</strong><span>source video</span></div><div class="metric"><strong>04</strong><span>local tools</span></div><div class="metric"><strong>09</strong><span>passing tests</span></div></div>
+    </div>
+  </header>
+  <main class="shell" id="content">
+    <aside class="rail" aria-label="Document trace">
+      <div class="rail-label">Execution trace</div>
+      <div class="toc">
+<ul>
+<li><a href="#1-the-brief-recover-the-code-then-teach-through-it">1. The brief — recover the code, then teach through it</a></li>
+<li><a href="#2-cold-start-turning-a-video-into-auditable-source-material">2. Cold start — turning a video into auditable source material</a></li>
+<li><a href="#3-design-decisions">3. Design decisions</a><ul>
+<li><a href="#31-faithful-reconstruction-not-fictional-byte-recovery">3.1 Faithful reconstruction, not fictional byte recovery</a></li>
+<li><a href="#32-keep-the-videos-chat-completions-architecture">3.2 Keep the video's Chat Completions architecture</a></li>
+<li><a href="#33-one-model-four-tools-one-loop">3.3 One model, four tools, one loop</a></li>
+<li><a href="#34-fill-operational-gaps-without-changing-the-lesson">3.4 Fill operational gaps without changing the lesson</a></li>
+<li><a href="#35-separate-the-clean-program-from-the-teaching-program">3.5 Separate the clean program from the teaching program</a></li>
+<li><a href="#36-paraphrase-the-transcript-do-not-manufacture-quotations">3.6 Paraphrase the transcript; do not manufacture quotations</a></li>
+<li><a href="#37-prove-that-the-tutorial-did-not-fork-the-program">3.7 Prove that the tutorial did not fork the program</a></li>
+</ul>
+</li>
+<li><a href="#4-the-crux-aligning-tims-mental-model-with-executable-control-flow">4. The crux — aligning Tim's mental model with executable control flow</a></li>
+<li><a href="#5-tools-and-features-used">5. Tools and features used</a></li>
+<li><a href="#6-what-went-wrong-and-the-fixes">6. What went wrong, and the fixes</a><ul>
+<li><a href="#61-the-starting-transcript-was-not-a-transcript">6.1 The starting transcript was not a transcript</a></li>
+<li><a href="#62-the-api-key-could-not-be-recovered-from-the-video">6.2 The API key could not be recovered from the video</a></li>
+<li><a href="#63-the-first-test-collection-could-not-import-the-module">6.3 The first test collection could not import the module</a></li>
+<li><a href="#64-a-funded-live-model-response-was-unavailable">6.4 A funded live model response was unavailable</a></li>
+<li><a href="#65-mock-objects-could-have-hidden-an-sdk-incompatibility">6.5 Mock objects could have hidden an SDK incompatibility</a></li>
+<li><a href="#66-the-tutorial-could-silently-drift-from-the-runnable-agent">6.6 The tutorial could silently drift from the runnable agent</a></li>
+<li><a href="#67-the-transcript-arrived-after-the-runnable-reconstruction">6.7 The transcript arrived after the runnable reconstruction</a></li>
+<li><a href="#68-the-requested-skill-appeared-missing">6.8 The requested skill appeared missing</a></li>
+</ul>
+</li>
+<li><a href="#7-verification">7. Verification</a></li>
+<li><a href="#8-where-things-stand">8. Where things stand</a></li>
+</ul>
+</div>
+
+    </aside>
+    <details class="mobile-index">
+      <summary>Document index</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-the-brief-recover-the-code-then-teach-through-it">1. The brief — recover the code, then teach through it</a></li>
+<li><a href="#2-cold-start-turning-a-video-into-auditable-source-material">2. Cold start — turning a video into auditable source material</a></li>
+<li><a href="#3-design-decisions">3. Design decisions</a><ul>
+<li><a href="#31-faithful-reconstruction-not-fictional-byte-recovery">3.1 Faithful reconstruction, not fictional byte recovery</a></li>
+<li><a href="#32-keep-the-videos-chat-completions-architecture">3.2 Keep the video's Chat Completions architecture</a></li>
+<li><a href="#33-one-model-four-tools-one-loop">3.3 One model, four tools, one loop</a></li>
+<li><a href="#34-fill-operational-gaps-without-changing-the-lesson">3.4 Fill operational gaps without changing the lesson</a></li>
+<li><a href="#35-separate-the-clean-program-from-the-teaching-program">3.5 Separate the clean program from the teaching program</a></li>
+<li><a href="#36-paraphrase-the-transcript-do-not-manufacture-quotations">3.6 Paraphrase the transcript; do not manufacture quotations</a></li>
+<li><a href="#37-prove-that-the-tutorial-did-not-fork-the-program">3.7 Prove that the tutorial did not fork the program</a></li>
+</ul>
+</li>
+<li><a href="#4-the-crux-aligning-tims-mental-model-with-executable-control-flow">4. The crux — aligning Tim's mental model with executable control flow</a></li>
+<li><a href="#5-tools-and-features-used">5. Tools and features used</a></li>
+<li><a href="#6-what-went-wrong-and-the-fixes">6. What went wrong, and the fixes</a><ul>
+<li><a href="#61-the-starting-transcript-was-not-a-transcript">6.1 The starting transcript was not a transcript</a></li>
+<li><a href="#62-the-api-key-could-not-be-recovered-from-the-video">6.2 The API key could not be recovered from the video</a></li>
+<li><a href="#63-the-first-test-collection-could-not-import-the-module">6.3 The first test collection could not import the module</a></li>
+<li><a href="#64-a-funded-live-model-response-was-unavailable">6.4 A funded live model response was unavailable</a></li>
+<li><a href="#65-mock-objects-could-have-hidden-an-sdk-incompatibility">6.5 Mock objects could have hidden an SDK incompatibility</a></li>
+<li><a href="#66-the-tutorial-could-silently-drift-from-the-runnable-agent">6.6 The tutorial could silently drift from the runnable agent</a></li>
+<li><a href="#67-the-transcript-arrived-after-the-runnable-reconstruction">6.7 The transcript arrived after the runnable reconstruction</a></li>
+<li><a href="#68-the-requested-skill-appeared-missing">6.8 The requested skill appeared missing</a></li>
+</ul>
+</li>
+<li><a href="#7-verification">7. Verification</a></li>
+<li><a href="#8-where-things-stand">8. Where things stand</a></li>
+</ul>
+</div>
+
+    </details>
+    <article class="article">
+      <p><strong>Date:</strong> 2026-08-31</p>
+<p><strong>Deliverable:</strong> <code>agent_tutorial.py</code> in the project root</p>
+<p><strong>Brief:</strong> "I added Tim's video transcript. Can you create a tutorial as if Tim is walking through the code. Write in prose and match each of his explanation or concept with the corresponding code segment. Embed the prose in the code as comments. do you think this is the best way to add explanation to the code ? let me know."</p>
+<p><strong>Final artifact:</strong> <code>agent_tutorial.py</code></p>
+<p><strong>Canonical runnable counterpart:</strong> <code>agent.py</code></p>
+<blockquote>
+<p>Reconstruction disclosure: the tutorial was built earlier in this same Codex
+task, but that part of the live conversation had already been compacted when
+this journey was requested. This account is reconstructed from the surviving
+task summary, the user's messages, the source and artifact manifests, the
+executable files, timestamped comments, dependency lock, and test report. It
+does not pretend to be a verbatim command log where the original output is no
+longer available.</p>
+</blockquote>
+<h2 id="1-the-brief-recover-the-code-then-teach-through-it">1. The brief — recover the code, then teach through it</h2>
+<p>The work began with a broader request:</p>
+<blockquote>
+<p>"Can you watch \"<a href="https://www.youtube.com/watch?v=c9AnqCeyxbI\&amp;t=1506s">https://www.youtube.com/watch?v=c9AnqCeyxbI&amp;t=1506s</a>\" and extract the code that builds an agent from scratch. Feel in any gap. Once you have the complete code, please test it to make sure it works. ask me if any question"</p>
+</blockquote>
+<p>That request contained three distinct obligations. Recover the code shown in a
+video. Fill omissions without disguising invented material as Tim's source.
+Then test the result rather than handing over an unexecuted transcription.</p>
+<p>The user later supplied two pieces of human input that changed the work:</p>
+<blockquote>
+<p>"i added OPENAI_API_KEY in ./.env"</p>
+</blockquote>
+<p>and then:</p>
+<blockquote>
+<p>"I added Tim's video transcript. Can you create a tutorial as if Tim is walking through the code. Write in prose and match each of his explanation or concept with the corresponding code segment. Embed the prose in the code as comments. do you think this is the best way to add explanation to the code ? let me know."</p>
+</blockquote>
+<p>The second message changed the deliverable from only a reconstructed program to
+a literate program. Each major explanation in the transcript had to sit beside
+the code that implements it. The comments also had to remain prose, not become
+a forest of terse labels.</p>
+<p>The interpretation was deliberately narrow. "As if Tim is walking through the
+code" meant preserving his pedagogical sequence and concepts in paraphrase. It
+did not mean impersonating him, fabricating quotes, or claiming that added
+safety code appeared in the video.</p>
+<p>The current request asked for this account using Claude's <code>dev-journey</code> skill.
+That skill was found locally at
+<code>%USERPROFILE%\.claude\skills\dev-journey\SKILL.md</code> and used directly. The
+skill required failures, rejected alternatives, limits, and unfinished work to
+remain visible.</p>
+<h2 id="2-cold-start-turning-a-video-into-auditable-source-material">2. Cold start — turning a video into auditable source material</h2>
+<p>The workspace started as a source-recovery task, not an existing software
+repository. The initial local transcript was only a tiny URL/chapter-style
+stub, about 305 bytes. It was not enough to reconstruct code or align concepts
+to individual functions.</p>
+<p>The source was therefore acquired in several representations:</p>
+<ul>
+<li>YouTube metadata and description;</li>
+<li>English caption tracks;</li>
+<li>a 130,264,327-byte 1080p video;</li>
+<li>a 346,835,575-byte 4K video-only stream;</li>
+<li>selected high-resolution frames from code-building portions; and</li>
+<li>later, the user's 47,016-byte <code>transcript.txt</code>.</li>
+</ul>
+<p>The source identity was recorded as Tech With Tim's <em>Building AI Agents in Pure
+Python - Beginner Course</em>, video ID <code>c9AnqCeyxbI</code>, duration 37:24. The evidence
+was kept under <code>evidence/c9AnqCeyxbI/</code>. <code>source-manifest.json</code> records the
+canonical URL, retrieval date, extraction method, coverage, and SHA-256 hashes.</p>
+<p>The captions explained the ideas, but screenshots were necessary for code
+shape. The 4K stream mattered because identifiers, indentation, schema fields,
+and message roles are easy to misread at lower resolution. The code-building
+sequence was inspected especially around these ranges:</p>
+<ul>
+<li><code>03:21-11:50</code>: first OpenAI Chat Completions request;</li>
+<li><code>13:15-17:08</code>: persistent conversation messages;</li>
+<li><code>17:08-28:09</code>: function schemas and the tool-call protocol;</li>
+<li><code>28:09-33:00</code>: the assembled <code>agent.py</code>; and</li>
+<li><code>33:00-36:20</code>: the agent building and debugging a Snake project.</li>
+</ul>
+<p>The first hard rule emerged here: <strong>a caption can recover intent; a code frame
+is needed to recover syntax.</strong> Neither one alone was enough.</p>
+<p>The project was then established as a Python package-shaped workspace using
+<code>pyproject.toml</code> and <code>uv.lock</code>. The tested environment ended at:</p>
+<ul>
+<li>Python <code>3.14.3</code>;</li>
+<li><code>openai==2.54.0</code>;</li>
+<li><code>httpx==0.28.1</code>;</li>
+<li><code>python-dotenv==1.2.3</code>; and</li>
+<li><code>pytest==9.1.1</code>.</li>
+</ul>
+<p>The directory is not a Git repository. The development-journey instruction to
+commit and push therefore did not apply. Nothing was silently published.</p>
+<h2 id="3-design-decisions">3. Design decisions</h2>
+<h3 id="31-faithful-reconstruction-not-fictional-byte-recovery">3.1 Faithful reconstruction, not fictional byte recovery</h3>
+<p>Two approaches were possible. One was to present a supposedly exact copy of
+the code visible in the video. That would have been cleaner rhetorically and
+less honest technically: the API key was blurred, some frames were incomplete,
+and captions do not encode punctuation.</p>
+<p>The chosen approach preserved the visible architecture and behavior while
+labelling every deliberate gap-fill. <code>SOURCE_NOTES.md</code> is the boundary ledger.
+It says what was directly visible and what was added for a runnable result.</p>
+<p><strong>A reconstruction becomes trustworthy when inference has an address.</strong> Here,
+the address is either a video timestamp or an explicit "reconstruction
+gap-fill" label.</p>
+<h3 id="32-keep-the-videos-chat-completions-architecture">3.2 Keep the video's Chat Completions architecture</h3>
+<p>The current OpenAI ecosystem offers newer abstractions, including the Responses
+API and higher-level agent frameworks. Switching would have produced a more
+contemporary sample but a worse reconstruction. The code therefore retains the
+video's <code>client.chat.completions.create(...)</code> call, <code>tools</code> array,
+<code>message.tool_calls</code>, and <code>role: "tool"</code> responses with <code>tool_call_id</code>.</p>
+<p>The rejected alternatives were LangChain, an agent SDK, and a custom protocol.
+All three would hide the mechanism the tutorial is meant to expose.</p>
+<h3 id="33-one-model-four-tools-one-loop">3.3 One model, four tools, one loop</h3>
+<p>The agent uses the video's deliberately small architecture:</p>
+<ol>
+<li>Send conversation history and tool schemas to <code>gpt-5-mini</code>.</li>
+<li>Append the assistant message to history.</li>
+<li>If it contains tool calls, dispatch each local Python function.</li>
+<li>Append each result with its matching <code>tool_call_id</code>.</li>
+<li>Ask the model again.</li>
+<li>Stop when the model returns ordinary text.</li>
+</ol>
+<p>The four capabilities are <code>list_files</code>, <code>read_file</code>, <code>write_file</code>, and
+<code>run_command</code>. This is enough for a model to inspect a project, edit it, run a
+check, observe the result, and revise.</p>
+<p>No planner, retrieval system, vector database, memory service, streaming UI,
+parallel execution, or multi-agent layer was added. Those were YAGNI cuts. Each
+would make the example more impressive and the agent loop less visible.</p>
+<h3 id="34-fill-operational-gaps-without-changing-the-lesson">3.4 Fill operational gaps without changing the lesson</h3>
+<p>The video demonstrates the happy path. A copied happy path would be fragile in
+a real folder, so <code>agent.py</code> adds:</p>
+<ul>
+<li><code>.env</code> loading instead of a key literal;</li>
+<li>the current <code>developer</code> instruction role instead of the video's <code>system</code>
+  role;</li>
+<li>a workspace boundary for direct file tools;</li>
+<li>automatic parent-directory creation on nested writes;</li>
+<li>recoverable malformed and unknown tool errors;</li>
+<li>a 20-round default ceiling;</li>
+<li>a 120-second shell-command timeout;</li>
+<li>a fixed shell working directory;</li>
+<li>lazy client construction; and</li>
+<li>interactive plus one-shot command-line modes.</li>
+</ul>
+<p>The rejected extreme was turning the reconstruction into a hardened sandbox.
+That would require process isolation, command allowlists, resource controls,
+and probably containers. The project instead preserves Tim's confirmation gate:
+every shell command pauses for an explicit <code>y</code>.</p>
+<p>The distinction matters. File confinement is a real restriction.
+<code>run_command(..., shell=True)</code> is not sandboxing. Approval reduces accidental
+execution; it does not make an approved command safe.</p>
+<h3 id="35-separate-the-clean-program-from-the-teaching-program">3.5 Separate the clean program from the teaching program</h3>
+<p>When the transcript arrived, three documentation designs were considered:</p>
+<ol>
+<li>Put all prose into <code>agent.py</code>.</li>
+<li>Write a separate Markdown tutorial with copied code snippets.</li>
+<li>Keep <code>agent.py</code> clean and create an executable commented twin.</li>
+</ol>
+<p>Option 1 gives perfect proximity but makes the working program harder to scan.
+Option 2 gives better long-form typography but lets prose and copied snippets
+drift away from the real code. Option 3 was chosen: <code>agent_tutorial.py</code> contains
+the same syntax tree as <code>agent.py</code>, with timestamped prose comments beside each
+concept.</p>
+<p>This hybrid is the best arrangement for this project. Embedded prose comments
+are excellent for line-by-line learning. They are not the best sole form of
+documentation. <code>README.md</code> remains the short operator guide,
+<code>SOURCE_NOTES.md</code> remains the provenance ledger, and this document records the
+process and failures.</p>
+<h3 id="36-paraphrase-the-transcript-do-not-manufacture-quotations">3.6 Paraphrase the transcript; do not manufacture quotations</h3>
+<p>The comments follow Tim's explanation order and include timestamps such as
+<code>00:34-03:14</code>, <code>28:11-30:24</code>, and <code>23:21-23:37</code>. They explain the model/tool
+boundary, JSON schemas, conversation state, the repeated loop, and why ordinary
+text is the stopping condition.</p>
+<p>Transcript language was paraphrased. This avoids long copied passages and also
+corrects the noise inherent in automatic captions. Added material is labelled
+<code>GAP-FILL</code> or <code>RECONSTRUCTION GAP-FILL</code> inside the file.</p>
+<h3 id="37-prove-that-the-tutorial-did-not-fork-the-program">3.7 Prove that the tutorial did not fork the program</h3>
+<p>Manual comparison was rejected as too weak. Comment-heavy source can conceal a
+changed literal, reordered statement, or missing branch.</p>
+<p><code>tests/test_tutorial.py</code> parses both files with Python's <code>ast</code> module and
+compares <code>ast.dump(..., include_attributes=False)</code>. Comments disappear from
+the abstract syntax tree. Equality therefore proves that the executable Python
+structure is identical, while ignoring line numbers and comment placement.</p>
+<p>That test turns "the comments are the only difference" from an editorial claim
+into an executable invariant.</p>
+<h2 id="4-the-crux-aligning-tims-mental-model-with-executable-control-flow">4. The crux — aligning Tim's mental model with executable control flow</h2>
+<p>The hard part was not adding many comments. It was putting each explanation at
+the point where the program makes it true.</p>
+<p>The tutorial begins with Tim's big picture before the imports: an agent is a
+model that can observe, act through tools, inspect results, and repeat. This
+prevents the reader from mistaking an agent for one unusually long prompt.</p>
+<p>The imports and constants then establish the runtime. Comments explain why the
+model identifier, round ceiling, working directory, and instruction prompt are
+configuration rather than the agent itself.</p>
+<p>Workspace confinement is documented before <code>_workspace_path</code>. This material is
+not attributed to Tim. It explains the reconstruction's safety boundary and
+why relative paths are resolved beneath the launch directory.</p>
+<p>The four Python functions come next because Tim first makes capabilities real.
+A model cannot directly read a disk or launch a process. These functions are
+ordinary deterministic code. They form the action side of the agent.</p>
+<p><code>TOOLS</code> explains dispatch: the function name emitted by the model becomes a
+lookup key. <code>TOOL_SCHEMAS</code> then explains the other half of the contract. The
+model sees JSON descriptions, not Python function objects. Each schema defines
+a name, description, argument object, required fields, and a ban on extra
+properties.</p>
+<p>The SDK compatibility helpers are explicitly marked as reconstruction. Their
+job is to accept both dictionary-shaped test doubles and attribute-based OpenAI
+SDK objects. That keeps deterministic tests simple without rewriting runtime
+logic for the test suite.</p>
+<p><code>run_tool</code> sits exactly where textual intention crosses into local side effect.
+Its comments follow the sequence: locate the function object, parse JSON
+arguments, reject malformed input, look up the tool, execute it, and return a
+string observation. Failures go back to the model as observations so it may
+recover.</p>
+<p><code>run_agent</code> contains the actual agent. Its comments number the loop:</p>
+<ol>
+<li>Ask the model what to do next.</li>
+<li>Preserve the assistant message.</li>
+<li>Stop if there are no tools.</li>
+<li>Otherwise execute every requested tool.</li>
+<li>Attach results to the correct call IDs.</li>
+<li>Repeat with the enlarged history.</li>
+</ol>
+<p>The outer <code>main</code> loop is then distinguished from the inner loop. The outer loop
+handles human turns. The inner loop handles autonomous model/tool rounds for
+one human request. Mixing those two loops is a common beginner confusion, so
+the tutorial treats the separation as a first-class concept.</p>
+<p>The central lesson is visible in code rather than stated abstractly:
+<strong>tool results become new context, and new context lets the model choose the
+next action.</strong> That feedback cycle is the agent.</p>
+<h2 id="5-tools-and-features-used">5. Tools and features used</h2>
+<table>
+<thead>
+<tr>
+<th>Tool or feature</th>
+<th>What it did in this session</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>YouTube URL and metadata</td>
+<td>Established source identity, publication data, duration, and chapter timing.</td>
+</tr>
+<tr>
+<td><code>yt-dlp</code> acquisition</td>
+<td>Retrieved captions, metadata, a 1080p video, and a 4K stream for inspection.</td>
+</tr>
+<tr>
+<td>High-resolution frame inspection</td>
+<td>Recovered code structure and identifiers that captions could not contain.</td>
+</tr>
+<tr>
+<td><code>transcript.txt</code></td>
+<td>Supplied the full timestamped explanation used to align prose comments to code.</td>
+</tr>
+<tr>
+<td>PowerShell and <code>rg</code></td>
+<td>Inventoried files, searched headings, inspected exact versions, and checked local skill locations.</td>
+</tr>
+<tr>
+<td><code>uv</code></td>
+<td>Resolved the Python environment, produced <code>uv.lock</code>, and ran the project and tests.</td>
+</tr>
+<tr>
+<td>OpenAI Python SDK <code>2.54.0</code></td>
+<td>Implemented the same Chat Completions/tool-call protocol used by the reconstructed agent.</td>
+</tr>
+<tr>
+<td><code>httpx.MockTransport</code></td>
+<td>Exercised real SDK serialization and parsing without spending API credits.</td>
+</tr>
+<tr>
+<td><code>pytest 9.1.1</code></td>
+<td>Verified tool behavior, loop behavior, failure handling, and tutorial parity.</td>
+</tr>
+<tr>
+<td>Python <code>ast</code></td>
+<td>Proved that <code>agent_tutorial.py</code> and <code>agent.py</code> have identical executable structure.</td>
+</tr>
+<tr>
+<td>SHA-256 manifests</td>
+<td>Bound sources and outputs to exact bytes and exposed later drift.</td>
+</tr>
+<tr>
+<td>Claude <code>dev-journey</code> skill</td>
+<td>Supplied the structure and required this account to preserve failures, limits, rejected alternatives, and unfinished work.</td>
+</tr>
+<tr>
+<td>Codex skill discovery</td>
+<td>Located the Claude skill after it was absent from Codex's advertised skill catalog.</td>
+</tr>
+</tbody>
+</table>
+<p>No subagents were spawned. The source analysis, reconstruction, commentary,
+tests, and this retrospective were performed inline in one task. The coding
+agent being built defaults to <code>gpt-5-mini</code>; that is not a claim about the host
+model running this development session.</p>
+<h2 id="6-what-went-wrong-and-the-fixes">6. What went wrong, and the fixes</h2>
+<h3 id="61-the-starting-transcript-was-not-a-transcript">6.1 The starting transcript was not a transcript</h3>
+<p>The first local text was only a short URL/chapter artifact, roughly 305 bytes.
+Treating it as complete would have produced a concept summary with guessed
+code.</p>
+<p>The fix was to acquire captions and video, then inspect the code-building
+sections visually. When the user later added the full transcript, it became the
+primary commentary source and was hashed into <code>source-manifest.json</code>.</p>
+<p>Near-miss: captions plus general Python knowledge could have produced plausible
+code quickly. Plausible is not source-grounded. The manifest and timestamp
+notes prevented that shortcut from being presented as extraction.</p>
+<h3 id="62-the-api-key-could-not-be-recovered-from-the-video">6.2 The API key could not be recovered from the video</h3>
+<p>The video's key was blurred, as it should be. Hard-coding a placeholder or
+copying a secret into source would have created both a broken example and a
+security failure.</p>
+<p>The fix was <code>.env</code> plus <code>python-dotenv</code>, with <code>.env</code> excluded in <code>.gitignore</code>.
+Only <code>.env.example</code> was made distributable. The user's manual addition of
+<code>OPENAI_API_KEY</code> was a necessary human-in-the-loop step.</p>
+<p>Near-miss avoided: validation commands inspected the presence and behavior of
+the key, not its value. The secret is not stored in any manifest or this doc.</p>
+<h3 id="63-the-first-test-collection-could-not-import-the-module">6.3 The first test collection could not import the module</h3>
+<p>The initial test run failed with:</p>
+<pre><code class="language-text">ModuleNotFoundError: No module named 'agent'
+</code></pre>
+<p>The project root was not on pytest's import path in that invocation. The fix
+was the explicit setting in <code>pyproject.toml</code>:</p>
+<pre><code class="language-toml">[tool.pytest.ini_options]
+pythonpath = [&quot;.&quot;]
+</code></pre>
+<p>The lesson was simple: <strong>a green implementation cannot exist before the test
+runner can import it. Test collection is part of the test.</strong></p>
+<h3 id="64-a-funded-live-model-response-was-unavailable">6.4 A funded live model response was unavailable</h3>
+<p>After the user added <code>.env</code>, the one-shot CLI successfully loaded the key and
+reached OpenAI's Chat Completions endpoint with <code>gpt-5-mini</code>. The service
+returned HTTP <code>429</code> with the error code:</p>
+<pre><code class="language-text">credit_balance_exhausted
+</code></pre>
+<p>The exact full response wrapper is no longer present after transcript
+compaction, so it is not reconstructed here as a fake verbatim block. The
+durable <code>TEST_REPORT.md</code> records the code and its interpretation: the selected
+API project had no remaining credits.</p>
+<p>The code could not fix account billing. Instead, the test suite added a real
+OpenAI SDK round trip through <code>httpx.MockTransport</code>. This verified request
+serialization, four transmitted tool schemas, SDK response parsing, the
+tool-result message, and the second model round without contacting OpenAI.</p>
+<p>Important boundary: that is strong protocol verification, but it is not a live
+model response. The project says so.</p>
+<h3 id="65-mock-objects-could-have-hidden-an-sdk-incompatibility">6.5 Mock objects could have hidden an SDK incompatibility</h3>
+<p>The first deterministic loop tests used small fake message objects. They were
+excellent for controlling one tool call, several calls, and infinite loops.
+They could still have passed while the actual OpenAI SDK serialized something
+differently.</p>
+<p>The fix was not to discard the fakes. It was to add one integration-shaped test
+using the real <code>OpenAI</code> client against a local mock transport. Unit control and
+SDK realism now cover different failure surfaces.</p>
+<h3 id="66-the-tutorial-could-silently-drift-from-the-runnable-agent">6.6 The tutorial could silently drift from the runnable agent</h3>
+<p>Duplicating <code>agent.py</code> to add commentary created a maintenance hazard. A copied
+file can diverge after one innocent edit.</p>
+<p>The AST parity test was the fix. It failed by design if executable syntax in
+one file ceased to match the other. Hashes for both files were also recorded in
+<code>artifact-manifest.json</code>.</p>
+<h3 id="67-the-transcript-arrived-after-the-runnable-reconstruction">6.7 The transcript arrived after the runnable reconstruction</h3>
+<p>The first pass necessarily used captions, video frames, and visible code. The
+user's later full transcript could have been treated as merely supplemental.
+That would have missed the user's actual request to make Tim's conceptual
+sequence drive the tutorial.</p>
+<p>The code was reread against <code>transcript.txt</code>. Commentary sections were placed
+around the matching program regions, timestamps were added, and reconstruction
+material was marked separately. The executable program was not rewritten to
+make the prose easier.</p>
+<h3 id="68-the-requested-skill-appeared-missing">6.8 The requested skill appeared missing</h3>
+<p><code>dev-journey</code> was absent from the provided Codex skill catalog. A local search
+of the Codex and agent skill roots found no match, and <code>npx skills find
+dev-journey</code> returned unrelated public skills such as <code>journey</code> and
+<code>journey-mapping</code>.</p>
+<p>A final check of Claude's own configuration found the exact requested file at
+<code>%USERPROFILE%\.claude\skills\dev-journey\SKILL.md</code>. The workflow switched to
+that instruction file. No substitute was installed and no public package was
+misrepresented as Claude's skill.</p>
+<h2 id="7-verification">7. Verification</h2>
+<p>The final deterministic command was:</p>
+<pre><code class="language-powershell">uv run pytest
+</code></pre>
+<p>The recorded result was:</p>
+<pre><code class="language-text">9 passed
+</code></pre>
+<p>The nine tests establish these observed properties:</p>
+<ol>
+<li>A plain assistant response stops the inner loop without calling tools.</li>
+<li>One tool result is attached to the right <code>tool_call_id</code> and sent back.</li>
+<li>Multiple tool calls in a single model response execute in order.</li>
+<li>File listing, reading, nested writing, UTF-8 behavior, and rejection of
+   <code>../outside.txt</code> work in a temporary workspace.</li>
+<li>A declined shell command never reaches the command runner; an approved one does.</li>
+<li>An unknown tool becomes a recoverable error string.</li>
+<li>Repeated tool calls hit the configured round ceiling instead of looping forever.</li>
+<li>The real OpenAI SDK works through a local two-round mock transport.</li>
+<li>The tutorial's AST equals the canonical program's AST.</li>
+</ol>
+<p>The source manifest was separately validated against its recorded evidence
+hashes. The artifact manifest was validated against seven output files before
+this development-journey document was added. This document and the changed
+README are rehashed as part of the current update.</p>
+<p>What was not verified:</p>
+<ul>
+<li>No funded live OpenAI response completed because the API project returned
+  <code>credit_balance_exhausted</code>.</li>
+<li>Therefore, no live model-selected tool call completed over the public API.</li>
+<li>Byte-for-byte identity with Tim's private or unpublished source was neither
+  possible nor claimed.</li>
+<li>The shell tool was not promoted as a security sandbox.</li>
+<li>No Git commit or remote publication was tested because this folder has no
+  <code>.git</code> repository.</li>
+</ul>
+<p>Costs and limits were also recorded. No dollar cost was measured. The live API
+attempt consumed no successful completion because the credit balance was
+exhausted. Source acquisition stored at least 477,099,902 bytes across the two
+video files, before captions, metadata, thumbnails, and local source files.
+The agent's safety ceilings are 20 model/tool rounds and 120 seconds per
+approved command unless configuration changes them.</p>
+<h2 id="8-where-things-stand">8. Where things stand</h2>
+<p><code>agent_tutorial.py</code> is complete as a transcript-grounded, executable tutorial.
+It preserves the behavior of <code>agent.py</code> and places Tim's concepts next to the
+corresponding implementation. The comments distinguish source explanation from
+reconstruction gap-fills.</p>
+<p>The durable knowledge stores are:</p>
+<ul>
+<li><code>agent_tutorial.py</code>: the line-by-line teaching artifact;</li>
+<li><code>agent.py</code>: the clean runnable version;</li>
+<li><code>README.md</code>: setup, operation, safety, and documentation entry points;</li>
+<li><code>SOURCE_NOTES.md</code>: timestamped source coverage and inference boundary;</li>
+<li><code>TEST_REPORT.md</code>: deterministic, SDK-level, and blocked-live evidence;</li>
+<li><code>source-manifest.json</code>: exact source provenance and hashes;</li>
+<li><code>artifact-manifest.json</code>: exact output purposes, dependencies, and hashes;</li>
+<li><code>tests/test_agent.py</code>: behavioral and protocol checks;</li>
+<li><code>tests/test_tutorial.py</code>: the comments-only parity invariant; and</li>
+<li><code>DEVELOPMENT-JOURNEY.md</code>: this session reconstruction and audit trail.</li>
+</ul>
+<p>One external item remains unfinished. A real model response and public-API tool
+round still require credits on the OpenAI API project associated with the
+user's key. Once funded, the concrete check is:</p>
+<pre><code class="language-powershell">uv run python agent.py --prompt &quot;Use list_files on the current directory, then summarize what you see.&quot;
+</code></pre>
+<p>The deliverable stands without that check because the local behavior and real
+SDK protocol path are covered deterministically. It should not, however, be
+described as live-end-to-end verified until that command returns a model answer
+and a real <code>list_files</code> tool round is observed.</p>
+<p>Future edits should change <code>agent.py</code> first, mirror the executable change into
+<code>agent_tutorial.py</code>, update the nearby explanation if necessary, run all tests,
+and refresh affected hashes. If the AST parity test fails after a comment-only
+edit, stop: the tutorial has accidentally become a different program.</p>
+    </article>
+  </main>
+  <footer class="page-footer">
+    <span>Source: DEVELOPMENT-JOURNEY.md · Generated deterministically</span>
+    <span><a href="https://www.youtube.com/watch?v=c9AnqCeyxbI">Watch Tim's original video</a></span>
+  </footer>
+  <script>
+const progress = document.querySelector('.progress');
+const headings = [...document.querySelectorAll('.article h2, .article h3')];
+const tocLinks = [...document.querySelectorAll('.toc a')];
+
+function updateProgress() {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  const ratio = max > 0 ? window.scrollY / max : 0;
+  progress.style.transform = `scaleX(${Math.min(1, Math.max(0, ratio))})`;
+}
+
+const observer = new IntersectionObserver((entries) => {
+  const visible = entries.filter((entry) => entry.isIntersecting).pop();
+  if (!visible) return;
+  tocLinks.forEach((link) => {
+    link.classList.toggle('active', link.getAttribute('href') === `#${visible.target.id}`);
+  });
+}, { rootMargin: '-18% 0px -72% 0px', threshold: 0 });
+
+headings.forEach((heading) => observer.observe(heading));
+window.addEventListener('scroll', updateProgress, { passive: true });
+updateProgress();
+
+document.querySelectorAll('pre').forEach((pre) => {
+  const button = document.createElement('button');
+  button.className = 'copy-code';
+  button.type = 'button';
+  button.textContent = 'COPY';
+  button.setAttribute('aria-label', 'Copy code block');
+  button.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(pre.innerText.replace(/^COPY\n/, ''));
+    button.textContent = 'COPIED';
+    setTimeout(() => { button.textContent = 'COPY'; }, 1400);
+  });
+  pre.appendChild(button);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.coverage*
+htmlcov/
+
+# Private/raw source material is retained locally but never published.
+transcript.txt
+evidence/
+artifact-manifest.json
+source-manifest.json
+*.mp4
+*.webm
+*.mkv
+*.vtt
+*.json3

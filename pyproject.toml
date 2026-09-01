@@ -1,0 +1,22 @@
+[project]
+name = "agent-from-scratch-tim"
+version = "0.1.0"
+description = "A tested reconstruction of Tech With Tim's pure-Python coding agent"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.28,<1.0",
+    "openai>=2.0,<3.0",
+    "python-dotenv>=1.0,<2.0",
+]
+
+[dependency-groups]
+dev = [
+    "markdown>=3.8,<4.0",
+    "pytest>=8.0,<10.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+pythonpath = ["."]

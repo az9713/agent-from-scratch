@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="What the suite proves, where its 63% branch coverage stops, and which failures deserve the next tests.">
+  <meta name="theme-color" content="#151b26">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='8'%20fill='%23151b26'/%3E%3Ctext%20x='8'%20y='43'%20font-size='32'%20fill='%2375e3e1'%3E%3E_%3C/text%3E%3C/svg%3E">
+  <title>Tests, explained · Agent from scratch</title>
+  <style>
+:root {
+  --paper: #f5f7fa;
+  --surface: #ffffff;
+  --ink: #151b26;
+  --muted: #5c6678;
+  --rule: #d8dee9;
+  --blue: #2857d9;
+  --cyan: #008f95;
+  --amber: #d88a00;
+  --code: #111827;
+  --code-ink: #dbeafe;
+  --shadow: 0 24px 70px rgba(24, 39, 75, 0.10);
+  --display: "Aptos Display", "Segoe UI Variable Display", "Trebuchet MS", sans-serif;
+  --body: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, serif;
+  --utility: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  overflow-x: hidden;
+  color: var(--ink);
+  background:
+    linear-gradient(rgba(40, 87, 217, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(40, 87, 217, 0.035) 1px, transparent 1px),
+    var(--paper);
+  background-size: 28px 28px;
+  font-family: var(--body);
+  font-size: 18px;
+  line-height: 1.72;
+}
+a { color: var(--blue); text-underline-offset: 0.18em; }
+a:hover { color: var(--cyan); }
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--amber);
+  outline-offset: 4px;
+}
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 10px;
+  left: 10px;
+  padding: 8px 12px;
+  color: white;
+  background: var(--ink);
+  transform: translateY(-160%);
+}
+.skip-link:focus { transform: translateY(0); }
+.progress {
+  position: fixed;
+  z-index: 50;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.site-bar {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 4vw;
+  border-bottom: 1px solid rgba(216, 222, 233, 0.9);
+  background: rgba(245, 247, 250, 0.90);
+  backdrop-filter: blur(14px);
+  font-family: var(--utility);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+.brand { color: var(--ink); text-decoration: none; font-weight: 700; }
+.brand-mark { color: var(--cyan); }
+.site-links { display: flex; gap: 18px; align-items: center; }
+.site-links a { color: var(--muted); text-decoration: none; }
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(70px, 10vw, 132px) 5vw clamp(60px, 8vw, 110px);
+  color: white;
+  background: var(--ink);
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  width: min(52vw, 720px);
+  aspect-ratio: 1;
+  right: -17vw;
+  top: -33%;
+  border: 1px solid rgba(0, 184, 193, 0.32);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 52px rgba(40, 87, 217, 0.08),
+    0 0 0 104px rgba(0, 143, 149, 0.06);
+}
+.hero-inner { position: relative; z-index: 1; max-width: 1180px; margin: auto; }
+.eyebrow {
+  margin: 0 0 20px;
+  color: #75e3e1;
+  font: 700 12px/1.3 var(--utility);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.hero h1 {
+  max-width: 880px;
+  margin: 0;
+  font: 760 clamp(48px, 8vw, 104px)/0.94 var(--display);
+  letter-spacing: -0.055em;
+}
+.hero-copy {
+  max-width: 700px;
+  margin: 28px 0 0;
+  color: #bfc9d9;
+  font: 400 clamp(18px, 2vw, 23px)/1.5 var(--body);
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  width: min(100%, 690px);
+  max-width: 690px;
+  margin-top: 44px;
+  background: #354053;
+  border: 1px solid #354053;
+}
+.metric { padding: 18px 20px; background: #1c2432; }
+.metric strong {
+  display: block;
+  color: white;
+  font: 720 25px/1 var(--display);
+  letter-spacing: -0.03em;
+}
+.metric span {
+  display: block;
+  margin-top: 7px;
+  color: #9faabc;
+  font: 500 10px/1.3 var(--utility);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.mobile-index { display: none; }
+.shell {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 820px);
+  gap: clamp(40px, 7vw, 100px);
+  max-width: 1240px;
+  margin: auto;
+  padding: 72px 5vw 120px;
+  align-items: start;
+}
+.rail {
+  position: sticky;
+  top: 32px;
+  font-family: var(--utility);
+}
+.rail-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.rail-label::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--cyan);
+  box-shadow: 0 0 0 5px rgba(0, 143, 149, 0.12);
+  border-radius: 50%;
+}
+.toc { position: relative; margin: 0; padding: 0 0 0 18px; }
+.toc > ul { margin: 0; padding: 0; list-style: none; }
+.toc::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 6px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--rule);
+}
+.toc ul ul { display: none; }
+.toc li { margin: 0; }
+.toc a {
+  position: relative;
+  display: block;
+  padding: 7px 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  text-decoration: none;
+}
+.toc a::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 13px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid #9aa6b8;
+  border-radius: 50%;
+  background: var(--paper);
+}
+.toc a.active { color: var(--blue); font-weight: 700; }
+.toc a.active::before { background: var(--blue); border-color: var(--blue); }
+.article {
+  min-width: 0;
+  padding: clamp(28px, 5vw, 72px);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow);
+}
+.article > h1 { display: none; }
+.article h2 {
+  margin: 3.4em 0 0.9em;
+  padding-top: 0.35em;
+  color: var(--ink);
+  font: 720 clamp(30px, 4vw, 45px)/1.08 var(--display);
+  letter-spacing: -0.035em;
+  scroll-margin-top: 28px;
+}
+.article h2:first-of-type { margin-top: 0; }
+.article h2::after {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 4px;
+  margin-top: 18px;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+}
+.article h3 {
+  margin: 2.5em 0 0.65em;
+  color: #24304a;
+  font: 700 clamp(22px, 2.4vw, 28px)/1.2 var(--display);
+  letter-spacing: -0.02em;
+  scroll-margin-top: 28px;
+}
+.article p { margin: 0.9em 0; }
+.article strong { color: #172c66; }
+.article blockquote {
+  margin: 1.8em 0;
+  padding: 1px 0 1px 24px;
+  color: #3e495b;
+  border-left: 4px solid var(--cyan);
+}
+.article ul, .article ol { padding-left: 1.4em; }
+.article li { margin: 0.38em 0; padding-left: 0.2em; }
+.article li::marker { color: var(--blue); font-family: var(--utility); }
+.article hr { border: 0; border-top: 1px solid var(--rule); margin: 3em 0; }
+.article code {
+  padding: 0.1em 0.35em;
+  border: 1px solid #dbe2ef;
+  border-radius: 3px;
+  color: #113d91;
+  background: #edf3ff;
+  font: 0.82em/1.5 var(--utility);
+  overflow-wrap: anywhere;
+}
+.article pre {
+  position: relative;
+  overflow-x: auto;
+  margin: 1.6em 0;
+  padding: 24px;
+  color: var(--code-ink);
+  background: var(--code);
+  border-left: 4px solid var(--cyan);
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.16);
+}
+.article pre code { padding: 0; border: 0; color: inherit; background: transparent; }
+.copy-code {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px 8px;
+  color: #a8b4c8;
+  background: #202b3c;
+  border: 1px solid #3a4659;
+  font: 600 10px/1 var(--utility);
+  cursor: pointer;
+}
+.article table {
+  width: 100%;
+  margin: 1.8em 0;
+  border-collapse: collapse;
+  font-size: 0.91em;
+}
+.article th, .article td { padding: 12px 14px; border: 1px solid var(--rule); text-align: left; vertical-align: top; }
+.article th { color: white; background: #263147; font-family: var(--utility); font-size: 0.78em; }
+.page-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 36px 5vw;
+  color: #aeb8c8;
+  background: var(--ink);
+  font: 11px/1.5 var(--utility);
+}
+.page-footer a { color: #75e3e1; }
+
+/* Landing page */
+.landing { max-width: 1180px; margin: auto; padding: 72px 5vw 120px; }
+.landing-intro { max-width: 760px; font-size: 22px; }
+.doc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 52px; }
+.doc-card {
+  position: relative;
+  min-height: 340px;
+  padding: clamp(28px, 5vw, 54px);
+  color: inherit;
+  background: white;
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+.doc-card:hover { color: inherit; transform: translateY(-5px); border-color: var(--blue); }
+.card-tag { color: var(--cyan); font: 700 11px/1 var(--utility); letter-spacing: 0.12em; text-transform: uppercase; }
+.doc-card h2 { margin: 70px 0 18px; font: 740 clamp(30px, 4vw, 48px)/1 var(--display); letter-spacing: -0.04em; }
+.doc-card p { color: var(--muted); }
+.card-arrow { position: absolute; right: 32px; bottom: 28px; color: var(--blue); font: 700 24px/1 var(--utility); }
+.loop-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  margin: 68px 0 0;
+  border: 1px solid var(--rule);
+  background: white;
+}
+.loop-step { position: relative; padding: 24px 16px; font: 600 11px/1.4 var(--utility); text-align: center; }
+.loop-step + .loop-step { border-left: 1px solid var(--rule); }
+.loop-step + .loop-step::before { content: "→"; position: absolute; left: -8px; color: var(--cyan); background: white; }
+
+@media (max-width: 860px) {
+  body { font-size: 17px; }
+  .site-links { display: none; }
+  .hero { padding-inline: 7vw; }
+  .hero h1 { font-size: clamp(46px, 15vw, 72px); }
+  .metrics { grid-template-columns: 1fr; max-width: 340px; }
+  .shell { display: block; padding: 34px 4vw 70px; }
+  .rail { display: none; }
+  .mobile-index { display: block; margin: 0 0 20px; padding: 12px 16px; background: white; border: 1px solid var(--rule); font-family: var(--utility); font-size: 12px; }
+  .mobile-index .toc { margin-top: 12px; }
+  .article { padding: 32px 6vw 64px; box-shadow: none; }
+  .doc-grid { grid-template-columns: 1fr; }
+  .loop-strip { grid-template-columns: 1fr; }
+  .loop-step + .loop-step { border-left: 0; border-top: 1px solid var(--rule); }
+  .loop-step + .loop-step::before { content: "↓"; top: -8px; left: 50%; }
+  .page-footer { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; }
+}
+
+@media print {
+  body { background: white; font-size: 11pt; }
+  .progress, .site-bar, .rail, .mobile-index, .copy-code { display: none !important; }
+  .hero { padding: 30px; color: black; background: white; border-bottom: 2px solid black; }
+  .hero h1 { font-size: 34pt; }
+  .hero-copy, .eyebrow { color: #333; }
+  .metrics { background: white; border-color: #aaa; }
+  .metric { color: black; background: white; }
+  .metric strong, .metric span { color: black; }
+  .shell { display: block; max-width: none; padding: 24px 0; }
+  .article { max-width: none; padding: 0; border: 0; box-shadow: none; }
+  .article h2, .article h3 { break-after: avoid; }
+  .article pre, .article blockquote { break-inside: avoid; }
+  .page-footer { color: black; background: white; border-top: 1px solid #aaa; }
+}
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <div class="progress" aria-hidden="true"></div>
+  <nav class="site-bar" aria-label="Site navigation">
+    <a class="brand" href="index.html"><span class="brand-mark">&gt;_</span> agent/from-scratch</a>
+    <div class="site-links">
+      <a href="development-journey.html">Development journey</a>
+      <a class="optional" href="https://github.com/az9713/agent-from-scratch">Source on GitHub</a>
+    </div>
+  </nav>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Verification record / 09 tests</p>
+      <h1>Tests, explained</h1>
+      <p class="hero-copy">What the suite proves, where its 63% branch coverage stops, and which failures deserve the next tests.</p>
+      <div class="metrics" aria-label="Document summary"><div class="metric"><strong>09</strong><span>deterministic tests</span></div><div class="metric"><strong>63%</strong><span>branch coverage</span></div><div class="metric"><strong>01</strong><span>real-SDK boundary test</span></div></div>
+    </div>
+  </header>
+  <main class="shell" id="content">
+    <aside class="rail" aria-label="Document trace">
+      <div class="rail-label">Execution trace</div>
+      <div class="toc">
+<ul>
+<li><a href="#test-environment-and-commands">Test environment and commands</a></li>
+<li><a href="#how-the-test-harness-works">How the test harness works</a></li>
+<li><a href="#the-nine-tests">The nine tests</a><ul>
+<li><a href="#1-test_plain_text_response_stops_without_tools">1. test_plain_text_response_stops_without_tools</a></li>
+<li><a href="#2-test_tool_result_is_returned_to_model">2. test_tool_result_is_returned_to_model</a></li>
+<li><a href="#3-test_multiple_tool_calls_in_one_round">3. test_multiple_tool_calls_in_one_round</a></li>
+<li><a href="#4-test_file_tools_are_confined_to_workspace">4. test_file_tools_are_confined_to_workspace</a></li>
+<li><a href="#5-test_command_requires_confirmation">5. test_command_requires_confirmation</a></li>
+<li><a href="#6-test_unknown_tool_error_is_recoverable">6. test_unknown_tool_error_is_recoverable</a></li>
+<li><a href="#7-test_round_limit_prevents_infinite_loop">7. test_round_limit_prevents_infinite_loop</a></li>
+<li><a href="#8-test_real_openai_sdk_round_trip_with_mock_transport">8. test_real_openai_sdk_round_trip_with_mock_transport</a></li>
+<li><a href="#9-test_tutorial_comments_do_not_change_the_program">9. test_tutorial_comments_do_not_change_the_program</a></li>
+</ul>
+</li>
+<li><a href="#what-the-suite-does-not-test">What the suite does not test</a></li>
+<li><a href="#coverage-assessment">Coverage assessment</a></li>
+<li><a href="#quality-assessment">Quality assessment</a></li>
+<li><a href="#highest-value-next-tests">Highest-value next tests</a></li>
+</ul>
+</div>
+
+    </aside>
+    <details class="mobile-index">
+      <summary>Document index</summary>
+      <div class="toc">
+<ul>
+<li><a href="#test-environment-and-commands">Test environment and commands</a></li>
+<li><a href="#how-the-test-harness-works">How the test harness works</a></li>
+<li><a href="#the-nine-tests">The nine tests</a><ul>
+<li><a href="#1-test_plain_text_response_stops_without_tools">1. test_plain_text_response_stops_without_tools</a></li>
+<li><a href="#2-test_tool_result_is_returned_to_model">2. test_tool_result_is_returned_to_model</a></li>
+<li><a href="#3-test_multiple_tool_calls_in_one_round">3. test_multiple_tool_calls_in_one_round</a></li>
+<li><a href="#4-test_file_tools_are_confined_to_workspace">4. test_file_tools_are_confined_to_workspace</a></li>
+<li><a href="#5-test_command_requires_confirmation">5. test_command_requires_confirmation</a></li>
+<li><a href="#6-test_unknown_tool_error_is_recoverable">6. test_unknown_tool_error_is_recoverable</a></li>
+<li><a href="#7-test_round_limit_prevents_infinite_loop">7. test_round_limit_prevents_infinite_loop</a></li>
+<li><a href="#8-test_real_openai_sdk_round_trip_with_mock_transport">8. test_real_openai_sdk_round_trip_with_mock_transport</a></li>
+<li><a href="#9-test_tutorial_comments_do_not_change_the_program">9. test_tutorial_comments_do_not_change_the_program</a></li>
+</ul>
+</li>
+<li><a href="#what-the-suite-does-not-test">What the suite does not test</a></li>
+<li><a href="#coverage-assessment">Coverage assessment</a></li>
+<li><a href="#quality-assessment">Quality assessment</a></li>
+<li><a href="#highest-value-next-tests">Highest-value next tests</a></li>
+</ul>
+</div>
+
+    </details>
+    <article class="article">
+      <p>This document explains what the test suite proves, what it does not prove, and
+how much confidence it should provide. The short answer is: the tests are good
+for the educational core of this agent, but they are not a production-readiness
+certificate.</p>
+<h2 id="test-environment-and-commands">Test environment and commands</h2>
+<p>The current deterministic suite was run on 2026-08-31 with:</p>
+<ul>
+<li>Python <code>3.14.3</code>;</li>
+<li><code>pytest==9.1.1</code>;</li>
+<li><code>openai==2.54.0</code>;</li>
+<li><code>httpx==0.28.1</code>; and</li>
+<li><code>python-dotenv==1.2.3</code>.</li>
+</ul>
+<p>The ordinary test command is:</p>
+<pre><code class="language-powershell">uv run pytest
+</code></pre>
+<p>The observed result was:</p>
+<pre><code class="language-text">9 passed
+</code></pre>
+<p>Wall-clock duration varies by machine and cache state, so the durable assertion
+is the pass count rather than one timing sample.</p>
+<p>Branch coverage was measured separately with Coverage.py <code>7.16.0</code>:</p>
+<pre><code class="language-powershell">uv run --with coverage coverage run --branch --source=agent --data-file=.coverage-doc-audit -m pytest
+uv run --with coverage coverage report --data-file=.coverage-doc-audit -m
+</code></pre>
+<p>The measurement reran all nine tests successfully and reported:</p>
+<pre><code class="language-text">Name       Stmts   Miss Branch BrPart  Cover
+-------------------------------------------------
+agent.py     131     45     34      6    63%
+-------------------------------------------------
+TOTAL        131     45     34      6    63%
+</code></pre>
+<p>The temporary coverage data file was removed after the report. Coverage.py was
+used transiently; it was not added to the project's locked dependencies.</p>
+<h2 id="how-the-test-harness-works">How the test harness works</h2>
+<p>Most tests do not call OpenAI. They construct deterministic stand-ins for the
+small portion of the API used by <code>run_agent</code>.</p>
+<p><code>FakeMessage</code> behaves like an assistant message. It stores normal text and an
+optional list of tool calls. Its <code>model_dump</code> method produces the dictionary
+shape that the application appends to conversation history.</p>
+<p><code>tool_call(...)</code> constructs an object containing a call ID, function name, and
+JSON-encoded arguments. This mirrors the fields the OpenAI SDK exposes without
+asking a model to generate them.</p>
+<p><code>FakeCompletions</code> returns a predetermined sequence of messages and logs every
+request. A test can therefore say, in effect, "first request a tool, then answer
+normally" and inspect both the result and the intermediate conversation.</p>
+<p><code>fake_client(...)</code> wraps those completions in the same
+<code>client.chat.completions</code> shape used by the program.</p>
+<p>Temporary directories supplied by pytest keep file-writing tests away from the
+real project. The command test injects a fake confirmation function and a fake
+runner, so it can prove whether execution would occur without launching an
+actual process.</p>
+<p>One test deliberately does use the real OpenAI Python SDK. It replaces the
+network with <code>httpx.MockTransport</code>, allowing the test to inspect the SDK's JSON
+request and return controlled Chat Completions responses locally.</p>
+<h2 id="the-nine-tests">The nine tests</h2>
+<h3 id="1-test_plain_text_response_stops_without_tools">1. <code>test_plain_text_response_stops_without_tools</code></h3>
+<p>This is the simplest stopping case. The fake model returns <code>"Done"</code> with an
+empty tool-call list.</p>
+<p>It verifies that:</p>
+<ul>
+<li><code>run_agent</code> returns the assistant's text;</li>
+<li>the model is called exactly once; and</li>
+<li>the assistant message is appended to conversation history.</li>
+</ul>
+<p>This test protects the rule that ordinary model text ends the inner agent loop.
+It does not test missing content, malformed choices, streaming responses, or an
+API exception.</p>
+<h3 id="2-test_tool_result_is_returned_to_model">2. <code>test_tool_result_is_returned_to_model</code></h3>
+<p>The test creates <code>alpha.txt</code> in a temporary workspace. The first fake model
+message requests <code>list_files</code>. The second returns a final answer.</p>
+<p>It verifies that:</p>
+<ul>
+<li>the requested Python tool actually runs;</li>
+<li>the observed result is <code>alpha.txt</code>;</li>
+<li>the result is stored as a <code>role: "tool"</code> message;</li>
+<li>the original call ID, <code>call-1</code>, becomes <code>tool_call_id</code>;</li>
+<li>the model is called a second time with the enlarged history; and</li>
+<li>the second assistant response becomes the final return value.</li>
+</ul>
+<p>This is the central agent-cycle test. It checks observation, action, feedback,
+and termination in one controlled example.</p>
+<h3 id="3-test_multiple_tool_calls_in_one_round">3. <code>test_multiple_tool_calls_in_one_round</code></h3>
+<p>The fake model requests two tools in the same response. It first writes
+<code>note.txt</code>, then reads that file.</p>
+<p>It verifies that:</p>
+<ul>
+<li>all tool calls in a response are executed;</li>
+<li>their order is preserved;</li>
+<li><code>write_file</code> creates the expected content;</li>
+<li><code>read_file</code> sees the just-written content; and</li>
+<li>both results are appended before the next model round.</li>
+</ul>
+<p>It does not test parallel tool execution, partial failure among several calls,
+or conflicting writes. The implementation is intentionally sequential.</p>
+<h3 id="4-test_file_tools_are_confined_to_workspace">4. <code>test_file_tools_are_confined_to_workspace</code></h3>
+<p>This test sets a temporary workspace, writes <code>nested/hello.txt</code>, reads it back,
+and lists the root directory. It then attempts to read <code>../outside.txt</code>.</p>
+<p>It verifies that:</p>
+<ul>
+<li>parent directories are created automatically;</li>
+<li>UTF-8 text survives a write/read round trip;</li>
+<li>directories are shown with a trailing slash; and</li>
+<li>a simple <code>..</code> traversal outside the workspace raises <code>ValueError</code>.</li>
+</ul>
+<p>This is a valuable safety regression test, but it is not a complete filesystem
+security audit. It does not exercise symlinks, Windows junctions, UNC paths,
+absolute paths, race conditions, permission failures, deleted files, binary
+files, non-UTF-8 input, or very large content.</p>
+<h3 id="5-test_command_requires_confirmation">5. <code>test_command_requires_confirmation</code></h3>
+<p>The test supplies a fake command runner and controls the answer to the approval
+prompt.</p>
+<p>It verifies that:</p>
+<ul>
+<li>answering <code>n</code> returns a refusal message;</li>
+<li>the runner is never called after refusal;</li>
+<li>answering <code>y</code> invokes the runner; and</li>
+<li>standard output is returned to the agent.</li>
+</ul>
+<p>It does not launch a real shell. It therefore does not verify the working
+directory, quoting behavior, PowerShell-versus-CMD differences, exit codes,
+combined standard output and error, empty output, the 120-second timeout, or
+process cleanup.</p>
+<p>Most importantly, this is an approval test, not a sandbox test. An approved
+shell command still has the user's operating-system permissions.</p>
+<h3 id="6-test_unknown_tool_error_is_recoverable">6. <code>test_unknown_tool_error_is_recoverable</code></h3>
+<p>The test asks for a nonexistent tool named <code>not_a_tool</code>.</p>
+<p>It verifies that <code>run_tool</code> returns an error string containing <code>unknown tool</code>
+instead of crashing the entire program. Returning the failure to the model
+gives the model an opportunity to correct its action.</p>
+<p>It does not cover invalid JSON, a JSON value that is not an object, missing
+arguments, unexpected arguments, wrong argument types, or an exception raised
+inside each real tool.</p>
+<h3 id="7-test_round_limit_prevents_infinite_loop">7. <code>test_round_limit_prevents_infinite_loop</code></h3>
+<p>The fake model requests a tool twice and never produces a normal answer. The
+test runs the agent with <code>max_tool_rounds=2</code>.</p>
+<p>It verifies that the loop raises a clear <code>RuntimeError</code> after the configured
+number of rounds. This prevents an accidental unbounded sequence of API calls
+and tool executions.</p>
+<p>It does not test zero or negative limits, cancellation during a round, token or
+cost budgets, elapsed-time budgets, or retries after transient API failures.</p>
+<h3 id="8-test_real_openai_sdk_round_trip_with_mock_transport">8. <code>test_real_openai_sdk_round_trip_with_mock_transport</code></h3>
+<p>This is the suite's strongest protocol test. It creates a real <code>OpenAI</code> client
+whose HTTP traffic goes to a local <code>httpx.MockTransport</code> handler.</p>
+<p>The first synthetic HTTP response asks for <code>list_files</code>. The application runs
+the tool. The second response says <code>Saw visible.txt</code>.</p>
+<p>It verifies that:</p>
+<ul>
+<li>the real SDK accepts the request assembled by <code>run_agent</code>;</li>
+<li>all four JSON tool schemas are serialized into the first HTTP request;</li>
+<li>the SDK parses a Chat Completions tool-call response;</li>
+<li>the local tool result is sent in the next request with the right call ID; and</li>
+<li>a second SDK response becomes the final answer.</li>
+</ul>
+<p>This closes an important gap left by permissive hand-written fakes. It still
+does not test authentication, DNS, TLS, latency, rate limits, OpenAI service
+behavior, model quality, or whether <code>gpt-5-mini</code> chooses sensible tools.</p>
+<h3 id="9-test_tutorial_comments_do_not_change_the_program">9. <code>test_tutorial_comments_do_not_change_the_program</code></h3>
+<p>This test parses both <code>agent.py</code> and <code>agent_tutorial.py</code> into Python abstract
+syntax trees and compares them after removing position metadata.</p>
+<p>Python comments do not appear in an AST. Equality therefore verifies that the
+tutorial and canonical files contain the same executable Python structure.</p>
+<p>This is a strong and elegant check for the chosen documentation design. It does
+not assess whether the comments are correct, complete, readable, faithful to
+the transcript, or placed beside the best code segment. Those are editorial
+and provenance questions, not syntax-tree properties.</p>
+<h2 id="what-the-suite-does-not-test">What the suite does not test</h2>
+<p>The largest untested area is the command-line shell around the core agent:</p>
+<ul>
+<li><code>create_client</code> with a missing or present environment key;</li>
+<li>argument parsing for interactive and <code>--prompt</code> modes;</li>
+<li><code>exit</code> and <code>quit</code> handling;</li>
+<li>printed output and process return codes;</li>
+<li>OpenAI exception handling in both CLI modes; and</li>
+<li>the module's <code>if __name__ == "__main__"</code> entry point.</li>
+</ul>
+<p>Other important gaps are:</p>
+<ul>
+<li>a funded, live OpenAI response and live model-selected tool call;</li>
+<li>malformed or incomplete API responses;</li>
+<li>invalid JSON and invalid tool argument shapes;</li>
+<li>command timeout, failure, standard-error, and no-output branches;</li>
+<li>empty-directory and non-directory behavior in <code>list_files</code>;</li>
+<li>filesystem permissions, symlinks, junctions, races, and large files;</li>
+<li>prompt injection through file contents or tool output;</li>
+<li>destructive-but-approved commands;</li>
+<li>concurrent callers and mutation of the global <code>WORKSPACE_ROOT</code>;</li>
+<li>Python <code>3.10</code> through <code>3.13</code>, even though the package declares <code>&gt;=3.10</code>;</li>
+<li>macOS and Linux behavior; and</li>
+<li>compatibility across the allowed future <code>openai&gt;=2.0,&lt;3.0</code> range.</li>
+</ul>
+<p>The test suite also does not measure whether the agent solves useful coding
+tasks. Behavioral evaluation would require a corpus of tasks, success criteria,
+repeat runs, model/version recording, cost and latency measurements, and a safe
+execution environment. That is a different layer from unit and protocol tests.</p>
+<h2 id="coverage-assessment">Coverage assessment</h2>
+<p>The measured 63% branch coverage is moderate. It is not poor for a compact
+tutorial whose untested lines are concentrated in the interactive CLI, but it
+is too low to support a claim of production readiness.</p>
+<p>The covered code is more important than the raw percentage suggests. The suite
+exercises the core feedback loop, single and multiple tool calls, conversation
+protocol, real filesystem changes in temporary directories, path traversal
+rejection, command approval, unknown-tool recovery, loop termination, real SDK
+serialization, and tutorial parity. Those are the highest-value invariants of
+the example.</p>
+<p>The uncovered branches are also meaningful. Coverage reported missing behavior
+around absolute-path handling, the non-directory error, command timeout,
+dictionary and fallback message conversions, non-object JSON arguments,
+<code>create_client</code>, almost all of <code>main</code>, and direct module execution. A percentage
+alone would hide that concentration.</p>
+<p>Coverage was measured only for <code>agent.py</code>. <code>agent_tutorial.py</code> was intentionally
+excluded because running the same tests against a duplicate file would inflate
+the number without adding confidence. Its executable equivalence is checked by
+AST parity instead.</p>
+<h2 id="quality-assessment">Quality assessment</h2>
+<p>Overall rating: <strong>good educational regression suite; insufficient production
+assurance</strong>.</p>
+<p>Strengths:</p>
+<ul>
+<li>Tests are deterministic, fast, and require no paid API access.</li>
+<li>Temporary directories isolate normal file side effects.</li>
+<li>Dependency injection makes command approval testable without a subprocess.</li>
+<li>The suite verifies message history, not merely final strings.</li>
+<li>Multiple tool calls and the infinite-loop guard cover nontrivial control flow.</li>
+<li>A real SDK plus mock transport tests the boundary that hand-written fakes may
+  misrepresent.</li>
+<li>AST parity is precisely matched to the two-file documentation strategy.</li>
+</ul>
+<p>Weaknesses:</p>
+<ul>
+<li>The CLI and client-construction code have almost no automated coverage.</li>
+<li>Error-path testing is narrow; only unknown tools and the loop ceiling are
+  deliberate failures.</li>
+<li>The command test's fake runner cannot reveal platform or subprocess bugs.</li>
+<li>The global workspace root is mutated directly and not restored by a fixture.
+  The current tests remain independent because each relevant test sets its own
+  temporary root, but a fixture would make that invariant safer.</li>
+<li>Mock model responses are structurally simple and may be more cooperative than
+  real or future SDK objects.</li>
+<li>There is no security test suite, fuzzing, property-based testing, load test,
+  or model-behavior evaluation.</li>
+<li>The stated Python and dependency ranges are broader than the tested matrix.</li>
+</ul>
+<h2 id="highest-value-next-tests">Highest-value next tests</h2>
+<p>If the project is extended, the next tests should be added in this order:</p>
+<ol>
+<li>Test malformed JSON, non-object JSON, missing arguments, and tool exceptions
+   as recoverable observations.</li>
+<li>Test <code>run_command</code> timeout, standard error, nonzero exit, empty output, and
+   the exact temporary working directory.</li>
+<li>Test <code>create_client</code> and both CLI modes by controlling environment variables,
+   arguments, input, output, and OpenAI errors.</li>
+<li>Test empty and invalid directories, absolute in-workspace paths, symlinks or
+   Windows junctions, and permission failures.</li>
+<li>Run a small Python-version and operating-system matrix.</li>
+<li>After API credits are available, add an opt-in live smoke test that records
+   the model, request ID, elapsed time, and cost without making it part of the
+   deterministic default suite.</li>
+<li>For any production use, replace the approved unrestricted shell with a real
+   sandbox and build adversarial security tests around that boundary.</li>
+</ol>
+<p>Adding tests merely to raise 63% would be the wrong goal. The next test should
+target the next plausible failure, especially one that could execute an unsafe
+action, corrupt a file, hide an API incompatibility, or spend money in a loop.</p>
+    </article>
+  </main>
+  <footer class="page-footer">
+    <span>Source: TESTS-EXPLAINED.md · Generated deterministically</span>
+    <span><a href="https://www.youtube.com/watch?v=c9AnqCeyxbI">Watch Tim's original video</a></span>
+  </footer>
+  <script>
+const progress = document.querySelector('.progress');
+const headings = [...document.querySelectorAll('.article h2, .article h3')];
+const tocLinks = [...document.querySelectorAll('.toc a')];
+
+function updateProgress() {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  const ratio = max > 0 ? window.scrollY / max : 0;
+  progress.style.transform = `scaleX(${Math.min(1, Math.max(0, ratio))})`;
+}
+
+const observer = new IntersectionObserver((entries) => {
+  const visible = entries.filter((entry) => entry.isIntersecting).pop();
+  if (!visible) return;
+  tocLinks.forEach((link) => {
+    link.classList.toggle('active', link.getAttribute('href') === `#${visible.target.id}`);
+  });
+}, { rootMargin: '-18% 0px -72% 0px', threshold: 0 });
+
+headings.forEach((heading) => observer.observe(heading));
+window.addEventListener('scroll', updateProgress, { passive: true });
+updateProgress();
+
+document.querySelectorAll('pre').forEach((pre) => {
+  const button = document.createElement('button');
+  button.className = 'copy-code';
+  button.type = 'button';
+  button.textContent = 'COPY';
+  button.setAttribute('aria-label', 'Copy code block');
+  button.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(pre.innerText.replace(/^COPY\n/, ''));
+    button.textContent = 'COPIED';
+    setTimeout(() => { button.textContent = 'COPY'; }, 1400);
+  });
+  pre.appendChild(button);
+});
+</script>
+</body>
+</html>
