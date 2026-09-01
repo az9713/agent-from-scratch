@@ -4,6 +4,12 @@ A tested, transcript-grounded reconstruction of the coding agent built in Tech
 With Tim's video, [Building AI Agents in Pure Python - Beginner
 Course](https://www.youtube.com/watch?v=c9AnqCeyxbI).
 
+> **Source-code notice:** `agent.py` and `agent_tutorial.py` are independent
+> reconstructions created from the video, its transcript, and visual inspection
+> of the code shown on screen. **They are not Tim's original source-code files,**
+> and this repository does not claim that they are exact or byte-for-byte copies
+> of his code.
+
 The project keeps the machinery visible: one OpenAI model, four ordinary Python
 tools, and a loop that sends tool results back to the model until it returns a
 normal answer. No agent framework is used.
@@ -41,12 +47,14 @@ The four tools are:
 
 ## Two versions of the same program
 
-[`agent.py`](agent.py) is the clean runnable implementation.
+[`agent.py`](agent.py) is the clean runnable reconstruction. It is not Tim's
+original source code.
 
-[`agent_tutorial.py`](agent_tutorial.py) is the learning version. It embeds
-Tim's concepts as timestamped prose comments beside the corresponding code and
-labels the safeguards that were added during reconstruction. An AST parity test
-proves that the comments do not change the executable Python structure.
+[`agent_tutorial.py`](agent_tutorial.py) is the commented learning version of
+that reconstruction—not an original file supplied by Tim. It embeds Tim's
+concepts as timestamped prose comments beside the corresponding code and labels
+the safeguards that were added during reconstruction. An AST parity test proves
+that the comments do not change the executable Python structure.
 
 This two-file design keeps the operational program readable without separating
 the tutorial prose from the code it explains.
@@ -131,10 +139,12 @@ may safely be modified.
 
 ## Source fidelity
 
-The implementation preserves the architecture and visible behavior from Tim's
-video, but it does not claim byte-for-byte recovery of his source. The API key
-was intentionally unavailable, some operational details were not part of the
-video, and this version adds explicit safety and testing infrastructure.
+Both `agent.py` and `agent_tutorial.py` were reconstructed for this project.
+Neither file is Tim's original source code. They preserve the architecture and
+visible behavior demonstrated in his video, but they do not claim exact or
+byte-for-byte recovery. The API key was intentionally unavailable, some
+operational details were not part of the video, and this version adds explicit
+safety and testing infrastructure.
 
 [`SOURCE_NOTES.md`](SOURCE_NOTES.md) records the timestamped evidence and the
 boundary between visible source material and reconstruction. The raw transcript,
